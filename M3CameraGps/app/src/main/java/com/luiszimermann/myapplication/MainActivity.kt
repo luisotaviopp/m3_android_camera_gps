@@ -1,17 +1,18 @@
 package com.luiszimermann.myapplication
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Base64
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.ByteArrayOutputStream
 
 
 class MainActivity : AppCompatActivity() {
@@ -19,6 +20,11 @@ class MainActivity : AppCompatActivity() {
 	private lateinit var fusedLocationClient: FusedLocationProviderClient
 	private lateinit var locationRequest: LocationRequest
 	private lateinit var locationCallback: LocationCallback
+
+	private lateinit var userPhoto: Bitmap
+	private var hasPhoto = false
+
+	private var postBody: PhotoModel = PhotoModel()
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -42,7 +48,7 @@ class MainActivity : AppCompatActivity() {
 		}
 	}
 
-	fun updateUserLocation() {
+	private fun updateUserLocation() {
 
 		// Checa as permissôes
 		if (
@@ -78,41 +84,34 @@ class MainActivity : AppCompatActivity() {
 
 					txt_latitude.text = "Latitude:  ${location.latitude}"
 					txt_longitude.text = "Longitude:  ${location.longitude}"
+
+					postBody.latitude = location.latitude
+					postBody.longitude = location.longitude
 				}
 			}
 		}
-
-		/* ----> Outro método, funciona também.
-
-		LocationServices.getFusedLocationProviderClient(this)
-			.lastLocation.addOnSuccessListener {
-				if (it != null) {
-					println("Longitude: ${it.longitude}")
-				} else {
-					println("Obj nulo")
-				}
-			}
-
-		*/
-
 	}
 
 	// Abre a câmera.
-	fun openCamera() {
-		val takePictureIntent: Intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+	private fun openCamera() {
+		val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 		startActivityForResult(takePictureIntent, REQUEST_CODE)
 	}
 
+	// Observer => Executa quando a foto tirada for carregada na memória.
 	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 		if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK){
 			val takenImage = data?.extras?.get("data") as Bitmap
 			image_view.setImageBitmap(takenImage)
+
+			// Gambiarra. Permite o usuário enviar a foto para a API.
+			hasPhoto = true
+			userPhoto = takenImage
 		} else {
 			super.onActivityResult(requestCode, resultCode, data)
 		}
 	}
 
-	//
 	private fun startLocationUpdates() {
 
 		if (ActivityCompat.checkSelfPermission(
@@ -159,8 +158,25 @@ class MainActivity : AppCompatActivity() {
 		startLocationUpdates()
 	}
 
+
+
 	// Envia a imagem para a API.
-	fun sendImageToAPI() {
-		Toast.makeText(this, "Atualizando GPS", Toast.LENGTH_SHORT).show()
+	private fun sendImageToAPI() {
+
+		if (!hasPhoto) {
+			Toast.makeText(this, "Ops, tire uma foto primeiro.", Toast.LENGTH_SHORT).show()
+			return
+		}
+
+		val byteArray = ByteArrayOutputStream()
+
+		userPhoto.compress(Bitmap.CompressFormat.JPEG, 100, byteArray)
+
+		val convertedArray = byteArray.toByteArray()
+		postBody.imageB64 =  Base64.encodeToString(convertedArray, Base64.DEFAULT)
+
+		println("Latitude: ${postBody.latitude} | Longitude: ${postBody.longitude} | Foto: ${postBody.imageB64}")
+
+		Toast.makeText(this, "Enviando para a API.", Toast.LENGTH_SHORT).show()
 	}
 }
