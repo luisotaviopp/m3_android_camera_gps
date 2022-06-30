@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
 	private lateinit var userPhoto: Bitmap
 	private var hasPhoto = false
 
-	private var postBody: PhotoModel = PhotoModel()
+	private var postBody: PhotoModel = PhotoModel();
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -80,7 +80,6 @@ class MainActivity : AppCompatActivity() {
 				if (locationResult.locations.isNotEmpty()) {
 
 					val location = locationResult.lastLocation
-					println("AAA: ${location.longitude}")
 
 					txt_latitude.text = "Latitude:  ${location.latitude}"
 					txt_longitude.text = "Longitude:  ${location.longitude}"
@@ -94,11 +93,10 @@ class MainActivity : AppCompatActivity() {
 
 	// Abre a câmera.
 	private fun openCamera() {
-		val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+		val takePictureIntent: Intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 		startActivityForResult(takePictureIntent, REQUEST_CODE)
 	}
 
-	// Observer => Executa quando a foto tirada for carregada na memória.
 	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 		if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK){
 			val takenImage = data?.extras?.get("data") as Bitmap
@@ -112,6 +110,7 @@ class MainActivity : AppCompatActivity() {
 		}
 	}
 
+	//
 	private fun startLocationUpdates() {
 
 		if (ActivityCompat.checkSelfPermission(
